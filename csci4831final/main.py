@@ -261,7 +261,7 @@ def make_graph(
             fig_time.show()
         
 
-def main(image_dir: str, tests: List[Test], save: bool) -> None:
+def main(image_dir: str, tests: List[Test], save: bool, show: bool) -> None:
     """
     Main entrypoint function.
 
@@ -275,6 +275,8 @@ def main(image_dir: str, tests: List[Test], save: bool) -> None:
     save: bool
         If True, will call ``save_results`` to save test
         results to disk.
+    show: bool
+        If True, will call ``make_graph`` to show graphs of results.
     """
 
     logging.info(f"Loading images from {image_dir}...")
@@ -289,9 +291,13 @@ def main(image_dir: str, tests: List[Test], save: bool) -> None:
         do_test(test)
 
     logging.info("Finished running tests!")
+    if show:
+        logging.info("Showing results...")
+        make_graph(tests, save, show)
     if save:
         logging.info("Saving results...")
         save_results(tests)
+
 
     logging.info("Done!")
      
@@ -300,10 +306,16 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="csci4821 final project")
     parser.add_argument(
-        "--image-dir", dest="image_dir", default="../People_Images"
+        "--image-dir", dest="image_dir", default="../People_Images",
+        help="Directory containing pictures of people on a Zoom call."
     )
     parser.add_argument(
-        "--save", dest="save", default=True
+        "--save", dest="save", default=True, action="store_true",
+        help="If given, will save results to disk."
+    )
+    parser.add_argument(
+        "--show-graphs", dest="show", default=True, action="store_true",
+        help="If given, will show graphs of results."
     )
     args = parser.parse_args()
 
@@ -319,6 +331,7 @@ if __name__ == "__main__":
     
     main(
         os.path.abspath(args.image_dir),
-        args.save, 
-        tests
+        tests,
+        args.save,
+        args.show
     )
