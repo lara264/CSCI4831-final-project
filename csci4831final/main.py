@@ -207,7 +207,7 @@ def make_graph(
         if transform_by_model.get(result_top.model_name, None) is None:
             transform_by_model[result_top.model_name] = list()
         if model_by_transform.get(result_top.transform_name, None) is None:
-            transform_by_model[result_top.transform_name] = list()
+            model_by_transform[result_top.transform_name] = list()
             
         for result in results:
             transform_by_model[result_top.model_name].append(
