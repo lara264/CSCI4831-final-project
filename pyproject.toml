@@ -7,6 +7,8 @@ authors = ["Lara Chunko", "Ryan Drew"]
 [tool.poetry.dependencies]
 python = "^3.8"
 sklearn = "^0.0"
+opencv-python = "^4.5.1"
+matplotlib = "^3.4.1"
 
 [tool.poetry.dev-dependencies]
 
