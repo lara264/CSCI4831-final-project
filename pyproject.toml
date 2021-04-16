@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "csci4831-final-project"
+name = "csci4831final"
 version = "0.1.0"
 description = ""
 authors = ["Lara Chunko", "Ryan Drew"]
