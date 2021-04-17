@@ -48,17 +48,26 @@ def get_face_mask(mask):
             for j in range(minX, maxX):
                 mask[i][j] = 1
 
-        cv2.imshow("mask", mask)
-        cv2.waitKey(0)
-
         return mask
 
     raise Exception("Incorrect number of points selected")
 
-if __name__ == "__main__":
 
-    # https://www.geeksforgeeks.org/python-foreground-extraction-in-an-image-using-grabcut-algorithm/
-    image = cv2.imread("../People_Images/Person_1.png")
+def get_true_mask(image: np.ndarray) -> np.ndarray:
+    """
+    Get true foreground mask of given input image.
+
+    Parameters
+    ----------
+    image: numpy array
+        output of cv2.imread
+
+    Returns
+    -------
+    numpy array
+        true mask as computed by grabcut
+    """
+
     mask = np.zeros(image.shape[:2], dtype="uint8")
     backgroundModel = np.zeros((1, 65), np.float64)
     foregroundModel = np.zeros((1, 65), np.float64)
@@ -67,7 +76,8 @@ if __name__ == "__main__":
     known_foreground = get_face_mask(mask)
 
     mask = np.zeros(image.shape[:2], dtype="uint8")
-    cv2.grabCut(image, mask, rect, backgroundModel, foregroundModel, 10, cv2.GC_INIT_WITH_RECT)
+    cv2.grabCut(image, mask, rect, backgroundModel, foregroundModel, 10,
+                cv2.GC_INIT_WITH_RECT)
     outputMask = np.where((mask == cv2.GC_BGD) | (mask == cv2.GC_PR_BGD), 0, 1)
     outputMask = (outputMask * 255).astype("uint8")
     output = cv2.bitwise_and(image, image, mask=outputMask)
@@ -78,3 +88,12 @@ if __name__ == "__main__":
     cv2.destroyAllWindows()
 
     cv2.destroyAllWindows()
+
+    return output
+
+
+if __name__ == "__main__":
+
+    # https://www.geeksforgeeks.org/python-foreground-extraction-in-an-image-using-grabcut-algorithm/
+    image = cv2.imread("../People_Images/Person_1.png")
+    get_true_mask(image)

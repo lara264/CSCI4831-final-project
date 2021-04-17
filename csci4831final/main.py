@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.cluster import KMeans
 import cv2
 import matplotlib.pyplot as plt
-import grabcut
+import get_points
 
 
 logging.basicConfig(
@@ -45,7 +45,11 @@ class PeopleImage:
     mask_data: np.ndarray  # True foreground mask of the image
     
 
-def load_images(image_dir: str, mask_dir: str) -> List[PeopleImage]:
+def load_images(
+    image_dir: str,
+    mask_dir: str,
+    compute_masks: bool = False
+) -> List[PeopleImage]:
     """
     Goes through the given image directory and loads images.
 
@@ -57,8 +61,11 @@ def load_images(image_dir: str, mask_dir: str) -> List[PeopleImage]:
     ---------
     image_dir: str
         Location of images of people.
-    mask_dir:
+    mask_dir: str
         Location of the foreground masks for the images of people.
+    compute_masks: bool
+        If True, will compute the mask of the image and save. If
+        False, will try to load from disk. Defaults to False
 
 
     Returns
@@ -68,14 +75,24 @@ def load_images(image_dir: str, mask_dir: str) -> List[PeopleImage]:
 
     images = list()
     for file in os.listdir(image_dir):
+        logging.info(f"Loading {file}...")
         path = os.path.join(image_dir, file)
         mask_path = os.path.join(mask_dir, file)
+        image = cv2.imread(path)
+
+        if compute_masks:
+            logging.info(f"Computing mask for {file}...")
+            cv2.imwrite(
+                mask_path,
+                get_points.get_true_mask(image)
+            )
+
         images.append(
             PeopleImage(
                 filename=file,
                 path=path,
                 mask_path=mask_path,
-                data=cv2.imread(path),
+                data=image,
                 mask_data=cv2.imread(mask_path)
             )
         )
@@ -257,6 +274,7 @@ def main(
     image_dir: str,
     mask_dir: str,
     tests: List[Test],
+    compute_masks: bool,
     save: bool,
     show: bool
 ) -> None:
@@ -272,6 +290,10 @@ def main(
         Location of foreground masks of people.
     tests: list of Test
         List of Tests to run.
+    comput_masks: bool
+        If True, will (re)compute masks and save results. If False,
+        will attempt to load from disk.
+
     save: bool
         If True, will call ``save_results`` to save test
         results to disk.
@@ -282,7 +304,7 @@ def main(
     logging.info(
         f"Loading images from {image_dir} and masks from {mask_dir}..."
     )
-    images = load_images(image_dir, mask_dir)
+    images = load_images(image_dir, mask_dir, compute_masks=compute_masks)
 
     logging.info("Running tests...")
     for test in tests:
@@ -305,13 +327,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="csci4821 final project")
     parser.add_argument(
-        "--run-tests", dest="run", default=False, action="store_true",
-        help="If given, will run cluster tests."
-    )
-    parser.add_argument(
-        "--save-true-masks", dest="save_mask", default=False,
-        action="store_true", help="If given, will load true masks from given"
-                                  "images."
+        "--compute-masks", dest="compute_mask", default=False,
+        action="store_true", help="If given, will compute true masks from "
+                                  "given images and save to disk."
     )
     parser.add_argument(
         "--mask-dir", dest="mask_dir", default="../People_Masks",
@@ -345,17 +363,12 @@ if __name__ == "__main__":
     image_dir = os.path.abspath(args.image_dir)
     mask_dir = os.path.abspath(args.mask_dir)
 
-    if not args.save_mask and not args.run:
-        print("Expected one of '--save-true-masks' or '--run-tests'")
-        exit(-1)
-
-    if args.save_mask:
-        grabcut.save_true_masks(mask_dir)
     if args.run:
         main(
             image_dir=os.path.abspath(args.image_dir),
             mask_dir=os.path.abspath(args.mask_dir),
             tests=tests,
+            compute_masks=args.compute_mask,
             save=args.save,
             show=args.show
         )
