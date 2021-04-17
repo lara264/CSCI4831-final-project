@@ -28,8 +28,8 @@ foregroundModel = np.zeros((1, 65), np.float64)
 #
 # mask2 = np.where((mask==2)|(mask==0), 0, 1).astype("uint8")
 # image = image * mask2[:,:, np.newaxis]
-#
-# #idea 1
+# #
+# # #idea 1
 # outputMask = np.where((mask == cv2.GC_BGD) | (mask == cv2.GC_PR_BGD), 0, 1)
 # outputMask = (outputMask * 255).astype("uint8")
 # output = cv2.bitwise_and(image, image, mask=outputMask)
@@ -90,7 +90,8 @@ cv2.grabCut(image, mask, rect, backgroundModel, foregroundModel, 10, cv2.GC_INIT
 outputMask = np.where((mask == cv2.GC_BGD) | (mask == cv2.GC_PR_BGD), 0, 1)
 outputMask = (outputMask * 255).astype("uint8")
 output = cv2.bitwise_and(image, image, mask=outputMask)
-output = cv2.bitwise_xor(image, output, mask=known_background)
+keep_me = cv2.bitwise_xor(image, output, mask=known_background)
+output = cv2.bitwise_or(output, keep_me)
 cv2.imshow("output", output)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
