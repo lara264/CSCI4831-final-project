@@ -81,7 +81,7 @@ for i in range(minY, maxY):
         mask[i][j] = 1
         known_background[i][j] = 1
 
-mask[mask > 0] = cv2.GC_FGD
+#mask[mask > 0] = cv2.GC_FGD
 
 rect = (45, 15, 313, 251)
 mask = np.zeros(image.shape[:2], dtype="uint8")

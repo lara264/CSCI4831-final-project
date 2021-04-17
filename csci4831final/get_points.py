@@ -58,10 +58,23 @@ def get_face_mask(mask):
 if __name__ == "__main__":
 
     # https://www.geeksforgeeks.org/python-foreground-extraction-in-an-image-using-grabcut-algorithm/
-    image = cv2.imread("../People_Images/Person_52.png")
+    image = cv2.imread("../People_Images/Person_1.png")
     mask = np.zeros(image.shape[:2], dtype="uint8")
+    backgroundModel = np.zeros((1, 65), np.float64)
+    foregroundModel = np.zeros((1, 65), np.float64)
 
-    get_rect()
-    get_face_mask(mask)
+    rect = get_rect()
+    known_foreground = get_face_mask(mask)
+
+    mask = np.zeros(image.shape[:2], dtype="uint8")
+    cv2.grabCut(image, mask, rect, backgroundModel, foregroundModel, 10, cv2.GC_INIT_WITH_RECT)
+    outputMask = np.where((mask == cv2.GC_BGD) | (mask == cv2.GC_PR_BGD), 0, 1)
+    outputMask = (outputMask * 255).astype("uint8")
+    output = cv2.bitwise_and(image, image, mask=outputMask)
+    keep_me = cv2.bitwise_xor(image, output, mask=known_foreground)
+    output = cv2.bitwise_or(output, keep_me)
+    cv2.imshow("output", output)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     cv2.destroyAllWindows()
