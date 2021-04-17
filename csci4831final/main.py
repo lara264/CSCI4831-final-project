@@ -8,11 +8,6 @@ from dataclasses import dataclass
 import argparse
 import time
 import numpy as np
-try:
-    import h2o4gpu as sklearn
-except ImportError:
-    import sklearn
-from sklearn.metrics import accuracy_score
 from sklearn.cluster import (
     AgglomerativeClustering,
     KMeans,
@@ -24,7 +19,7 @@ import get_points
 
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="(%(levelname)s): %(asctime)s --- %(message)s"
 )
 
@@ -159,7 +154,7 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
 
         to_predict = test.transform(image.data).reshape(
             image.data.shape[0] * image.data.shape[1],
-            image.data.shape[2]
+            -1
         )
         prediction = test.model.fit_predict(to_predict).reshape(
             image.data.shape[0], image.data.shape[1], 1
@@ -167,18 +162,22 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
 
         end = time.perf_counter()
 
-        predicted_mask = cv2.bitwise_and(image, prediction)
-        acc = accuracy_score(image.mask_data, predicted_mask)
+        prediction = (prediction * 255).astype("uint8")
+        predicted_mask = cv2.bitwise_and(
+            image.data, image.data, mask=prediction
+        )
+        acc = float(np.sum(np.abs(image.mask_data - predicted_mask)))
+        
         accuracies.append(acc)
         run_time = end - start
-        times.append(time)
+        times.append(run_time)
         result = [
             test.model_name, test.transform_name, acc, run_time, image.filename
         ]
         results.append(result)
 
         cv2.imwrite(
-            os.path.join(save_dir, "_".join(result)), predicted_mask
+            os.path.join(save_dir, "_".join(map(str, result))), predicted_mask
         )
 
 
@@ -432,9 +431,9 @@ if __name__ == "__main__":
 
     tests = make_tests(
         [  # models
-            (AgglomerativeClustering(n_clusters=2), "HAC"),
+            #(AgglomerativeClustering(n_clusters=2), "HAC"),
             (KMeans(n_clusters=2), "KMeans"),
-            (SpectralClustering(n_clusters=2), "Spectral"),
+            #(SpectralClustering(n_clusters=2), "Spectral"),
         ],
         [  # transforms
             (lambda i: i, "Identity"),
