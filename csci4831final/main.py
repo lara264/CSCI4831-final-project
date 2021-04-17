@@ -162,6 +162,10 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
 
         end = time.perf_counter()
 
+        foreground_label = prediction[0][0]
+        if foreground_label > 0:
+            prediction = np.ones(prediction.shape) - prediction
+            
         prediction = (prediction * 255).astype("uint8")
         predicted_mask = cv2.bitwise_and(
             image.data, image.data, mask=prediction
