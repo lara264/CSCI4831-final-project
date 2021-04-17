@@ -12,7 +12,7 @@ def click(event, x, y, flags, params):
         print(x,y)
         points.append((x,y))
 
-def get_rect():
+def get_rect(image):
     """ Getting rect """
     global points
     points = []
@@ -27,7 +27,7 @@ def get_rect():
 
     raise Exception("Incorrect number of points selected")
 
-def get_face_mask(mask):
+def get_face_mask(mask, image):
 
     """ Getting person's face """
     global points
@@ -72,8 +72,8 @@ def get_true_mask(image: np.ndarray) -> np.ndarray:
     backgroundModel = np.zeros((1, 65), np.float64)
     foregroundModel = np.zeros((1, 65), np.float64)
 
-    rect = get_rect()
-    known_foreground = get_face_mask(mask)
+    rect = get_rect(image)
+    known_foreground = get_face_mask(mask, image)
 
     mask = np.zeros(image.shape[:2], dtype="uint8")
     cv2.grabCut(image, mask, rect, backgroundModel, foregroundModel, 10,

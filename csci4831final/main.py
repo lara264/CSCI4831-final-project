@@ -372,14 +372,14 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if not args.run_tests and not args.compute_masks:
-        print("Expected one of '--run-tests' or '--compute-masks'.")
+    if not args.run_tests and not args.compute_mask:
+        print("Expected one of '--run-tests' or '--compute-mask'.")
         exit(1)
-    
+
     image_dir = os.path.abspath(args.image_dir)
     mask_dir = os.path.abspath(args.mask_dir)
 
-    if args.compute_masks:
+    if args.compute_mask:
         compute_mask(args.compute_mask, mask_dir=mask_dir)
         exit(0)
 
