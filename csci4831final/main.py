@@ -9,7 +9,11 @@ import argparse
 import time
 import numpy as np
 from sklearn.metrics import accuracy_score
-from sklearn.cluster import KMeans
+from sklearn.cluster import (
+    AgglomerativeClustering,
+    KMeans,
+    SpectralClustering
+)
 import cv2
 import matplotlib.pyplot as plt
 import get_points
@@ -146,10 +150,17 @@ def do_test(test: Test, data: List[PeopleImage]) -> None:
 
     for image in data:
         start = time.perf_counter()
-        to_predict = test.transform(image.data)
-        prediction = test.model.fit_predict(to_predict)
+
+        to_predict = test.transform(image.data).reshape(
+            image.data.shape[0] * image.data.shape[1],
+            image.data.shape[2]
+        )
+        prediction = test.model.fit_predict(to_predict).reshape(
+            image.data.shape
+        )
         predicted_mask = cv2.bitwise_and(image, prediction)
         acc = accuracy_score(image.mask_data, predicted_mask)
+
         accuracies.append(acc)
         end = time.perf_counter()
         times.append(end - start)
@@ -387,7 +398,8 @@ if __name__ == "__main__":
 
     tests = make_tests(
         [  # models
-            (KMeans(n_clusters=2), "KMeans with 2 Clusters")
+            (AgglomerativeClustering(n_clusters=2), "HAC with 2 Clusters"),
+            (KMeans(n_clusters=2), "KMeans with 2 Clusters"),
         ],
         [  # transforms
             (lambda x: x, "Identity Transform")
