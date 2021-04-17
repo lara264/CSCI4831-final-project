@@ -8,6 +8,10 @@ from dataclasses import dataclass
 import argparse
 import time
 import numpy as np
+try:
+    import h2o4gpu as sklearn
+except ImportError:
+    import sklearn
 from sklearn.metrics import accuracy_score
 from sklearn.cluster import (
     AgglomerativeClustering,
@@ -158,7 +162,7 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
             image.data.shape[2]
         )
         prediction = test.model.fit_predict(to_predict).reshape(
-            image.data.shape
+            image.data.shape[0], image.data.shape[1], 1
         )
 
         end = time.perf_counter()
