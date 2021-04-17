@@ -170,12 +170,28 @@ def do_test(test: Test, data: List[PeopleImage]) -> None:
     test.avg_time = np.mean(times)
 
 
-def save_results(tests: List[Test]) -> None:
+def save_results(tests: List[Test], results: List[List[str]]) -> None:
     """
     Save results of test functions to disk.
     """
 
-    raise RuntimeError("Not Implemented")
+    # save the results and store in a .txt file
+
+    # storage format: ModelName_TransformName_Accuracy_RunTime
+
+    avg_results = open("avg_results.txt", "a")
+    all_results = open("all_results.txt", "a")
+
+    for t in tests:
+        data = f"{t.model_name}_{t.transform_name}_{t.acc}_{t.avg_time}\n"
+        avg_results.write(data)
+
+    for one_run in results:
+        data = f"{one_run[4]}_{one_run[0]}_{one_run[1]}_{one_run[2]}_{one_run[3]}\n"
+        all_results.write(data)
+
+    avg_results.close()
+    all_results.close()
 
 
 def make_tests(
