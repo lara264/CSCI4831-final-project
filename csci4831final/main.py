@@ -12,11 +12,11 @@ from sklearn.metrics import accuracy_score
 from sklearn.cluster import KMeans
 import cv2
 import matplotlib.pyplot as plt
+import grabcut
 
 
 logging.basicConfig(
-    level=logging.DEBUG, 
-    encoding="utf-8",
+    level=logging.DEBUG,
     format="(%(levelname)s): %(asctime)s --- %(message)s"
 )
 
@@ -40,23 +40,12 @@ class PeopleImage:
 
     filename: str  # Filename of image on disk
     path: str  # Path to image on disk
+    mask_path: str  # Path to image forground mask on disk
     data: np.ndarray  # output of cv2.imread
-    true_mask: np.ndarray = None  # True foreground mask of the image
-
-
-def get_true_mask(in_image: PeopleImage) -> None:
-    """
-    Sets the true_mask attribute of a PeopleImage.
-
-    This function takes in a PeopleImage class and then sets
-    the true_mask attribute to what the image's true foreground
-    mask should be.
-    """
-
-    raise RuntimeError("Not Implemented")
+    mask_data: np.ndarray  # True foreground mask of the image
     
 
-def load_images(image_dir: str) -> List[PeopleImage]:
+def load_images(image_dir: str, mask_dir: str) -> List[PeopleImage]:
     """
     Goes through the given image directory and loads images.
 
@@ -68,6 +57,8 @@ def load_images(image_dir: str) -> List[PeopleImage]:
     ---------
     image_dir: str
         Location of images of people.
+    mask_dir:
+        Location of the foreground masks for the images of people.
 
 
     Returns
@@ -78,11 +69,14 @@ def load_images(image_dir: str) -> List[PeopleImage]:
     images = list()
     for file in os.listdir(image_dir):
         path = os.path.join(image_dir, file)
+        mask_path = os.path.join(mask_dir, file)
         images.append(
             PeopleImage(
                 filename=file,
                 path=path,
-                data=cv2.imread(path)
+                mask_path=mask_path,
+                data=cv2.imread(path),
+                mask_data=cv2.imread(mask_path)
             )
         )
 
@@ -119,7 +113,7 @@ def do_test(test: Test, data: List[PeopleImage]) -> None:
         start = time.perf_counter()
         to_predict = test.transform(image.data)
         prediction = test.model.fit_predict(to_predict)
-        acc = accuracy_score(image.true_mask, prediction)
+        acc = accuracy_score(image.mask_data, prediction)
         accuracies.append(acc)
         end = time.perf_counter()
         times.append(end - start)
@@ -177,9 +171,7 @@ def make_graph(
     show: bool = True
 ) -> None:
     """
-    Make prettry graphs representing test results.
-
-    Graphs are displayed
+    Make pretty graphs representing test results.
 
     Parameters
     ----------
@@ -211,10 +203,10 @@ def make_graph(
             
         for result in results:
             transform_by_model[result_top.model_name].append(
-                (result.model_name, result.acc, result.time)
+                (result.model_name, result.acc, result.avg_time)
             )
             model_by_transform[result_top.transform_name].append(
-                (result.transform_name, result.acc, result.time)
+                (result.transform_name, result.acc, result.avg_time)
             )
 
     
@@ -239,7 +231,7 @@ def make_graph(
             fig_acc.show()
             fig_time.show()
 
-    for transform_name, model in model_by_transform.items():
+    for transform_name, models in model_by_transform.items():
         y_acc = [model[1] for model in models]
         y_time = [model[2] for model in models]
         x = [model[0] for model in models]
@@ -261,7 +253,13 @@ def make_graph(
             fig_time.show()
         
 
-def main(image_dir: str, tests: List[Test], save: bool, show: bool) -> None:
+def main(
+    image_dir: str,
+    mask_dir: str,
+    tests: List[Test],
+    save: bool,
+    show: bool
+) -> None:
     """
     Main entrypoint function.
 
@@ -270,6 +268,8 @@ def main(image_dir: str, tests: List[Test], save: bool, show: bool) -> None:
     ---------
     image_dir: str
         Location of images of people.
+    mask_dir: str
+        Location of foreground masks of people.
     tests: list of Test
         List of Tests to run.
     save: bool
@@ -279,16 +279,15 @@ def main(image_dir: str, tests: List[Test], save: bool, show: bool) -> None:
         If True, will call ``make_graph`` to show graphs of results.
     """
 
-    logging.info(f"Loading images from {image_dir}...")
-    images = load_images(image_dir)
-    logging.info("Getting true masks...")
-    for image in images:
-        image.true_mask = get_true_mask(image)
+    logging.info(
+        f"Loading images from {image_dir} and masks from {mask_dir}..."
+    )
+    images = load_images(image_dir, mask_dir)
 
     logging.info("Running tests...")
     for test in tests:
         logging.info(f"Running test: {test.desc}")
-        do_test(test)
+        do_test(test, images)
 
     logging.info("Finished running tests!")
     if show:
@@ -306,15 +305,29 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="csci4821 final project")
     parser.add_argument(
+        "--run-tests", dest="run", default=False, action="store_true",
+        help="If given, will run cluster tests."
+    )
+    parser.add_argument(
+        "--save-true-masks", dest="save_mask", default=False,
+        action="store_true", help="If given, will load true masks from given"
+                                  "images."
+    )
+    parser.add_argument(
+        "--mask-dir", dest="mask_dir", default="../People_Masks",
+        help="Directory containing true foreground masks of images in"
+             "image-dir."
+    )
+    parser.add_argument(
         "--image-dir", dest="image_dir", default="../People_Images",
         help="Directory containing pictures of people on a Zoom call."
     )
     parser.add_argument(
-        "--save", dest="save", default=True, action="store_true",
+        "--save", dest="save", default=False, action="store_true",
         help="If given, will save results to disk."
     )
     parser.add_argument(
-        "--show-graphs", dest="show", default=True, action="store_true",
+        "--show-graphs", dest="show", default=False, action="store_true",
         help="If given, will show graphs of results."
     )
     args = parser.parse_args()
@@ -328,10 +341,21 @@ if __name__ == "__main__":
             (lambda x: x, "Identity Transform")
         ]
     )
-    
-    main(
-        os.path.abspath(args.image_dir),
-        tests,
-        args.save,
-        args.show
-    )
+
+    image_dir = os.path.abspath(args.image_dir)
+    mask_dir = os.path.abspath(args.mask_dir)
+
+    if not args.save_mask and not args.run:
+        print("Expected one of '--save-true-masks' or '--run-tests'")
+        exit(-1)
+
+    if args.save_mask:
+        grabcut.save_true_masks(mask_dir)
+    if args.run:
+        main(
+            image_dir=os.path.abspath(args.image_dir),
+            mask_dir=os.path.abspath(args.mask_dir),
+            tests=tests,
+            save=args.save,
+            show=args.show
+        )
