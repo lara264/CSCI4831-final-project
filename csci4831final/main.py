@@ -198,14 +198,14 @@ def save_results(t: Test, results: List[List[str]]) -> None:
 
     # storage format: ModelName_TransformName_Accuracy_RunTime
 
-    avg_results = open("avg_results.txt", "a")
-    all_results = open("all_results.txt", "a")
+    avg_results = open("avg_results.csv", "a")
+    all_results = open("all_results.csv", "a")
 
-    data = f"{t.model_name}_{t.transform_name}_{t.acc}_{t.avg_time}\n"
+    data = f"{t.model_name},{t.transform_name},{t.acc},{t.avg_time}\n"
     avg_results.write(data)
 
     for one_run in results:
-        data = f"{one_run[4]}_{one_run[0]}_{one_run[1]}_{one_run[2]}_{one_run[3]}\n"
+        data = f"{one_run[4]},{one_run[0]},{one_run[1]},{one_run[2]},{one_run[3]}\n"
         all_results.write(data)
 
     avg_results.close()
