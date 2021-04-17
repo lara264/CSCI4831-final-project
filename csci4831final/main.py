@@ -169,7 +169,7 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
         acc = float(np.sum(np.abs(
             cv2.cvtColor(image.mask_data, cv2.COLOR_BGR2GRAY) - 
             cv2.cvtColor(predicted_mask, cv2.COLOR_BGR2GRAY)
-        )))
+        ))) / (image.mask_data.shape[0] * image.mask_data.shape[1])
         
         accuracies.append(acc)
         run_time = end - start
@@ -284,10 +284,10 @@ def make_graph(
             
         for result in results:
             transform_by_model[result_top.model_name].append(
-                (result.model_name, result.acc, result.avg_time)
+                (result.transform_name, result.acc, result.avg_time)
             )
             model_by_transform[result_top.transform_name].append(
-                (result.transform_name, result.acc, result.avg_time)
+                (result.model_name, result.acc, result.avg_time)
             )
 
     
@@ -299,10 +299,10 @@ def make_graph(
         title_time = f"Time of {model_name}"
         
         fig_acc, ax_acc = make_bar(
-            x, "Transforms", y_acc, "Accuracy", title_acc
+            x, "Transforms", y_acc, "Accuracy (%)", title_acc
         )
         fig_time, ax_time = make_bar(
-            x, "Transforms", y_time, "Time", title_time
+            x, "Transforms", y_time, "Time (Seconds)", title_time
         )
 
         fig_acc.savefig(
@@ -324,10 +324,10 @@ def make_graph(
         title_time = f"Time of {transform_name}"
         
         fig_acc, ax_acc = make_bar(
-            x, "Models", y_acc, "Accuracy", title_acc
+            x, "Models", y_acc, "Accuracy (%)", title_acc
         )
         fig_time, ax_time = make_bar(
-            x, "Models", y_time, "Time", title_time
+            x, "Models", y_time, "Time (Seconds)", title_time
         )
 
         fig_acc.savefig(
