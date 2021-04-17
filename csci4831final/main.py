@@ -438,9 +438,9 @@ if __name__ == "__main__":
 
     tests = make_tests(
         [  # models
-            #(AgglomerativeClustering(n_clusters=2), "HAC"),
+            (AgglomerativeClustering(n_clusters=2), "HAC"),
             (KMeans(n_clusters=2), "KMeans"),
-            #(SpectralClustering(n_clusters=2), "Spectral"),
+            (SpectralClustering(n_clusters=2), "Spectral"),
         ],
         [  # transforms
             (lambda i: i, "Identity"),
