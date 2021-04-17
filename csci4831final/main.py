@@ -43,7 +43,29 @@ class PeopleImage:
     mask_path: str  # Path to image forground mask on disk
     data: np.ndarray  # output of cv2.imread
     mask_data: np.ndarray  # True foreground mask of the image
-    
+
+
+def compute_mask(image: str, mask_dir: str) -> None:
+    """
+    Compute mask for given image
+
+    Parameters
+    ----------
+    image : str
+        image to compute mask for
+    mask_dir : str
+        directory to save result to
+    """
+
+    file = os.path.basename(image)
+    mask_path = os.path.join(mask_dir, file)
+    logging.info(f"Computing mask for {file}...")
+    image = cv2.imread(image)
+    cv2.imwrite(
+        mask_path,
+        get_points.get_true_mask(image)
+    )
+
 
 def load_images(
     image_dir: str,
@@ -81,11 +103,7 @@ def load_images(
         image = cv2.imread(path)
 
         if compute_masks:
-            logging.info(f"Computing mask for {file}...")
-            cv2.imwrite(
-                mask_path,
-                get_points.get_true_mask(image)
-            )
+            compute_mask(image, mask_path)
 
         images.append(
             PeopleImage(
@@ -327,9 +345,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="csci4821 final project")
     parser.add_argument(
-        "--compute-masks", dest="compute_mask", default=False,
-        action="store_true", help="If given, will compute true masks from "
-                                  "given images and save to disk."
+        "--run-tests", dest="run_tests", default=False,
+        action="store_true", help="If given, will run model tests."
+    )
+    parser.add_argument(
+        "--compute-mask", dest="compute_mask",
+        help="If given, will compute true mask for given image. If 'ALL' is"
+             "given, then will compute mask for all images as they are loaded"
     )
     parser.add_argument(
         "--mask-dir", dest="mask_dir", default="../People_Masks",
@@ -350,6 +372,17 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    if not args.run_tests and not args.compute_masks:
+        print("Expected one of '--run-tests' or '--compute-masks'.")
+        exit(1)
+    
+    image_dir = os.path.abspath(args.image_dir)
+    mask_dir = os.path.abspath(args.mask_dir)
+
+    if args.compute_masks:
+        compute_mask(args.compute_mask, mask_dir=mask_dir)
+        exit(0)
+
 
     tests = make_tests(
         [  # models
@@ -360,10 +393,7 @@ if __name__ == "__main__":
         ]
     )
 
-    image_dir = os.path.abspath(args.image_dir)
-    mask_dir = os.path.abspath(args.mask_dir)
-
-    if args.run:
+    if args.run_tests:
         main(
             image_dir=os.path.abspath(args.image_dir),
             mask_dir=os.path.abspath(args.mask_dir),
