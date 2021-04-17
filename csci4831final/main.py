@@ -166,7 +166,10 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
         predicted_mask = cv2.bitwise_and(
             image.data, image.data, mask=prediction
         )
-        acc = float(np.sum(np.abs(image.mask_data - predicted_mask)))
+        acc = float(np.sum(np.abs(
+            cv2.cvtColor(image.mask_data, cv2.COLOR_BGR2GRAY) - 
+            cv2.cvtColor(predicted_mask, cv2.COLOR_BGR2GRAY)
+        )))
         
         accuracies.append(acc)
         run_time = end - start
