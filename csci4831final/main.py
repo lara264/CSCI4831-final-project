@@ -122,7 +122,7 @@ def load_images(
     return images
 
 
-def do_test(test: Test, data: List[PeopleImage]) -> None:
+def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
     """
     Given a Test instance, run the test and set metric attributes.
 
@@ -136,7 +136,9 @@ def do_test(test: Test, data: List[PeopleImage]) -> None:
     test: Test
         Test dataclass to use.
     data: list of PeopleImage
-        Input data to test the model against
+        Input data to test the model against.
+    save_dir: str
+        Directory to save results to.
 
     Returns
     -------
@@ -146,7 +148,7 @@ def do_test(test: Test, data: List[PeopleImage]) -> None:
 
     accuracies = list()
     times = list() 
- 
+    results = list()
 
     for image in data:
         start = time.perf_counter()
@@ -158,16 +160,27 @@ def do_test(test: Test, data: List[PeopleImage]) -> None:
         prediction = test.model.fit_predict(to_predict).reshape(
             image.data.shape
         )
+
+        end = time.perf_counter()
+
         predicted_mask = cv2.bitwise_and(image, prediction)
         acc = accuracy_score(image.mask_data, predicted_mask)
-
         accuracies.append(acc)
-        end = time.perf_counter()
-        times.append(end - start)
+        run_time = end - start
+        times.append(time)
+        result = [
+            test.model_name, test.transform_name, acc, run_time, image.filename
+        ]
+        results.append(result)
+
+        cv2.imwrite(
+            os.path.join(save_dir, "_".join(result)), predicted_mask
+        )
 
 
     test.acc = np.mean(accuracies)
     test.avg_time = np.mean(times)
+    save_results(test, results)
 
 
 def save_results(tests: List[Test], results: List[List[str]]) -> None:
@@ -230,7 +243,7 @@ def make_tests(
 
 def make_graph(
     results: List[Test], 
-    save: bool = False,
+    save_dir: str,
     show: bool = True
 ) -> None:
     """
@@ -240,8 +253,8 @@ def make_graph(
     ----------
     results: list of Test
         Fully filled out Test instances
-    save: bool, optional
-        If True, will save to disk. Defaults to False.
+    save_dir: str
+        Directory to save results to.
     show: bool, optional
         If True, will show graphs. Defaults to True.
     """
@@ -287,9 +300,13 @@ def make_graph(
             x, "Transforms", y_time, "Time", title_time
         )
 
-        if save:
-            fig_acc.savefig(f"accuracy_of_{model_name}.png")
-            fig_time.savefig(f"time_of_{model_name}.png")
+        fig_acc.savefig(
+            os.path.join(save_dir, f"accuracy_of_{model_name}.png")
+        )
+        fig_time.savefig(
+            os.path.join(save_dir, f"time_of_{model_name}.png")
+        )
+
         if show:
             fig_acc.show()
             fig_time.show()
@@ -307,10 +324,14 @@ def make_graph(
         fig_time, ax_time = make_bar(
             x, "Models", y_time, "Time", title_time
         )
-        
-        if save:
-            fig_acc.savefig(f"accuracy_of_{transform_name}.png")
-            fig_time.savefig(f"time_of_{transform_name}.png")
+
+        fig_acc.savefig(
+            os.path.join(save_dir, f"accuracy_of_{transform_name}.png")
+        )
+        fig_time.savefig(
+            os.path.join(save_dir, f"time_of_{transform_name}.png")
+        )
+
         if show:
             fig_acc.show()
             fig_time.show()
@@ -321,7 +342,7 @@ def main(
     mask_dir: str,
     tests: List[Test],
     compute_masks: bool,
-    save: bool,
+    save_dir: str,
     show: bool
 ) -> None:
     """
@@ -339,10 +360,8 @@ def main(
     comput_masks: bool
         If True, will (re)compute masks and save results. If False,
         will attempt to load from disk.
-
-    save: bool
-        If True, will call ``save_results`` to save test
-        results to disk.
+    save_dir: str
+        Directory to save results to.
     show: bool
         If True, will call ``make_graph`` to show graphs of results.
     """
@@ -355,16 +374,12 @@ def main(
     logging.info("Running tests...")
     for test in tests:
         logging.info(f"Running test: {test.desc}")
-        do_test(test, images)
+        do_test(test, images, save_dir)
 
     logging.info("Finished running tests!")
-    if show:
-        logging.info("Showing results...")
-        make_graph(tests, save, show)
-    if save:
-        logging.info("Saving results...")
-        save_results(tests)
 
+    logging.info("Making graphs...")
+    make_graph(tests, save_dir, show)
 
     logging.info("Done!")
      
@@ -391,8 +406,8 @@ if __name__ == "__main__":
         help="Directory containing pictures of people on a Zoom call."
     )
     parser.add_argument(
-        "--save", dest="save", default=False, action="store_true",
-        help="If given, will save results to disk."
+        "--save-dir", dest="save_dir", default="../results",
+        help="Save results to the given folder."
     )
     parser.add_argument(
         "--show-graphs", dest="show", default=False, action="store_true",
@@ -437,6 +452,6 @@ if __name__ == "__main__":
             mask_dir=os.path.abspath(args.mask_dir),
             tests=tests,
             compute_masks=args.compute_mask,
-            save=args.save,
+            save_dir=args.save_dir,
             show=args.show
         )
