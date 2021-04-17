@@ -183,7 +183,7 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
     save_results(test, results)
 
 
-def save_results(tests: List[Test], results: List[List[str]]) -> None:
+def save_results(t: Test, results: List[List[str]]) -> None:
     """
     Save results of test functions to disk.
     """
@@ -195,9 +195,8 @@ def save_results(tests: List[Test], results: List[List[str]]) -> None:
     avg_results = open("avg_results.txt", "a")
     all_results = open("all_results.txt", "a")
 
-    for t in tests:
-        data = f"{t.model_name}_{t.transform_name}_{t.acc}_{t.avg_time}\n"
-        avg_results.write(data)
+    data = f"{t.model_name}_{t.transform_name}_{t.acc}_{t.avg_time}\n"
+    avg_results.write(data)
 
     for one_run in results:
         data = f"{one_run[4]}_{one_run[0]}_{one_run[1]}_{one_run[2]}_{one_run[3]}\n"
