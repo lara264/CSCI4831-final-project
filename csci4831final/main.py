@@ -398,11 +398,20 @@ if __name__ == "__main__":
 
     tests = make_tests(
         [  # models
-            (AgglomerativeClustering(n_clusters=2), "HAC with 2 Clusters"),
-            (KMeans(n_clusters=2), "KMeans with 2 Clusters"),
+            (AgglomerativeClustering(n_clusters=2), "HAC"),
+            (KMeans(n_clusters=2), "KMeans"),
+            (SpectralClustering(n_clusters=2), "Spectral"),
         ],
         [  # transforms
-            (lambda x: x, "Identity Transform")
+            (lambda i: i, "Identity"),
+            (
+                lambda i: cv2.GaussianBlur(i, (5, 5), 1),
+                "5x5 Gaussian Blur with Sigma=1"
+            ),
+            (
+                lambda i: cv2.cvtColor(i, cv2.COLOR_BGR2GRAY),
+                "Grayscale"
+            )
         ]
     )
 
