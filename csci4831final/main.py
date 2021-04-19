@@ -8,19 +8,16 @@ from dataclasses import dataclass
 import argparse
 import time
 import numpy as np
-from sklearn.cluster import (
-    AgglomerativeClustering,
-    KMeans,
-    SpectralClustering
-)
 import cv2
 import matplotlib.pyplot as plt
 import get_points
+import clusters
 
 
 logging.basicConfig(
     level=logging.INFO,
-    format="(%(levelname)s): %(asctime)s --- %(message)s"
+    format="(%(levelname)s): %(asctime)s --- %(message)s",
+    filename="out.log"
 )
 
 
@@ -150,41 +147,29 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
     results = list()
 
     for image in data:
+        logging.info(f"Running against {image.filename}")
         start = time.perf_counter()
 
-        to_predict = test.transform(image.data).reshape(
-            image.data.shape[0] * image.data.shape[1],
-            -1
-        )
-        prediction = test.model.fit_predict(to_predict).reshape(
-            image.data.shape[0], image.data.shape[1], 1
-        )
+        to_predict = test.transform(image.data)
+        prediction = test.model(to_predict)
 
         end = time.perf_counter()
 
-        foreground_label = prediction[0][0]
-        if foreground_label > 0:
-            prediction = np.ones(prediction.shape) - prediction
-            
-        prediction = (prediction * 255).astype("uint8")
-        predicted_mask = cv2.bitwise_and(
-            image.data, image.data, mask=prediction
-        )
-        acc = float(np.sum(np.abs(
-            cv2.cvtColor(image.mask_data, cv2.COLOR_BGR2GRAY) - 
-            cv2.cvtColor(predicted_mask, cv2.COLOR_BGR2GRAY)
-        ))) / (image.mask_data.shape[0] * image.mask_data.shape[1])
+        acc = clusters.get_accuracy(prediction, to_predict)
         
         accuracies.append(acc)
         run_time = end - start
         times.append(run_time)
         result = [
-            test.model_name, test.transform_name, acc, run_time, image.filename
+            image.filename, test.model_name, test.transform_name, acc, run_time
         ]
         results.append(result)
 
         cv2.imwrite(
-            os.path.join(save_dir, "_".join(map(str, result))), predicted_mask
+            os.path.join(
+                save_dir,
+                f"{'_'.join(map(str, result))}.png"
+            ), prediction
         )
 
 
@@ -272,8 +257,11 @@ def make_graph(
     def make_bar(x, x_label, y, y_label, title):
         fig, ax = plt.subplots()
         ax.set_xlabel(x_label)
+        ax.tick_params(axis="x", labelrotation=40, labelsize="small")
         ax.set_ylabel(y_label)
+        ax.tick_params(axis="both", grid_alpha=0.5)
         ax.set_title(title)
+        ax.grid()
         ax.bar(x, y)
 
         return fig, ax
@@ -310,15 +298,20 @@ def make_graph(
         )
 
         fig_acc.savefig(
-            os.path.join(save_dir, f"accuracy_of_{model_name}.png")
+            os.path.join(save_dir, f"accuracy_of_{model_name}.pdf"),
+            bbox_inches="tight"
         )
         fig_time.savefig(
-            os.path.join(save_dir, f"time_of_{model_name}.png")
+            os.path.join(save_dir, f"time_of_{model_name}.pdf"),
+            bbox_inches="tight"
         )
 
         if show:
             fig_acc.show()
             fig_time.show()
+
+        plt.close(fig=fig_acc)
+        plt.close(fig=fig_time)
 
     for transform_name, models in model_by_transform.items():
         y_acc = [model[1] for model in models]
@@ -335,16 +328,21 @@ def make_graph(
         )
 
         fig_acc.savefig(
-            os.path.join(save_dir, f"accuracy_of_{transform_name}.png")
+            os.path.join(save_dir, f"accuracy_of_{transform_name}.pdf"),
+            bbox_inches="tight"
         )
         fig_time.savefig(
-            os.path.join(save_dir, f"time_of_{transform_name}.png")
+            os.path.join(save_dir, f"time_of_{transform_name}.pdf"),
+            bbox_inches="tight"
         )
 
         if show:
             fig_acc.show()
             fig_time.show()
-        
+
+        plt.close(fig=fig_acc)
+        plt.close(fig=fig_time)
+
 
 def main(
     image_dir: str,
@@ -438,22 +436,28 @@ if __name__ == "__main__":
 
     tests = make_tests(
         [  # models
-            (AgglomerativeClustering(n_clusters=2), "HAC"),
-            (KMeans(n_clusters=2), "KMeans"),
-            (SpectralClustering(n_clusters=2), "Spectral"),
+            #(clusters.spectral, "spectral"),
+            (clusters.kmeans, "KM"),
+            (clusters.minibatch_kmeans, "MBKM"),
+            (lambda i: clusters.hac(i, "ward"), "HACW"),
+            (lambda i: clusters.hac(i, "complete"), "HACC"),
+            (lambda i: clusters.hac(i, "average"), "HACA"),
+            (lambda i: clusters.kmeans(i, True), "KMfp"),
+            (lambda i: clusters.minibatch_kmeans(i, True), "MBKMfp"),
+            (lambda i: clusters.hac(i, "ward", True), "HACWfp"),
+            (lambda i: clusters.hac(i, "complete", True), "HACCfp"),
+            (lambda i: clusters.hac(i, "average", True), "HACAfp")
         ],
         [  # transforms
-            (lambda i: i, "Identity"),
-            (
-                lambda i: cv2.GaussianBlur(i, (5, 5), 1),
-                "5x5 Gaussian Blur with Sigma=1"
-            ),
-            (
-                lambda i: cv2.cvtColor(i, cv2.COLOR_BGR2GRAY),
-                "Grayscale"
-            )
+            (lambda i: i, "ID"),
+            (lambda i: cv2.cvtColor(i, cv2.COLOR_BGR2GRAY), "GS"),
+            (lambda i: cv2.GaussianBlur(i, (5, 5), 1), "51GB"),
+            (lambda i: cv2.GaussianBlur(i, (5, 5), 3), "53GB"),
+            (lambda i: cv2.GaussianBlur(i, (5, 5), 5), "55GB")
         ]
     )
+
+
 
     if args.run_tests:
         main(

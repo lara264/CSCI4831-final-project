@@ -9,6 +9,7 @@ python = "^3.8"
 sklearn = "^0.0"
 opencv-python = "^4.5.1"
 matplotlib = "^3.4.1"
+pyamg = "^4.1.0"
 
 [tool.poetry.dev-dependencies]
 
