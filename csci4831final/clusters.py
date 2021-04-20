@@ -50,7 +50,7 @@ def add_position_feature(image_data: np.ndarray) -> np.ndarray:
     return result
 
 
-def get_accuracy(predicted: np.ndarray, true: np.ndarray) -> np.ndarray:
+def get_accuracy(predicted: np.ndarray, true: np.ndarray) -> float:
     """Get accuracy of predicted foreground in comparison to true."""
 
     predicted_binary = (predicted > 0).astype("int8")
