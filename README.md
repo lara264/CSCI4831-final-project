@@ -54,7 +54,7 @@ optional arguments:
   --show-graphs         If given, will show graphs of results.
 ```
 
-Runtime is about 30-60 minutes. Testing can be done on a small subset by utilizing the `--image-dir` and `--mask-dir` options. For instance:
+Runtime is about 30-60 minutes. Logs are outputted to a file called `out.log` within the current working directory. Testing can be done on a small subset by utilizing the `--image-dir` and `--mask-dir` options. For instance:
 
 ```bash
 $ mkdir results
@@ -85,9 +85,10 @@ Each of these models and transforms are abbreviated in outputted results. Note t
 
 When running main.py, there are a couple of files that are created:
 
-* `all_results.csv`: CSV file containing results from running each image against each model against each transform. Columns are: run time, filename, model name, transform name, accuracy
-* `avg_results.csv`: CSV file containing average results for each model against each transform. Columns are model name, transform name, accuracy, run time
-* `results/`: Directory containing output foreground masks for test, as well as graphs displaying average results.
+* `all_results.csv`: CSV file containing results from running each image against each model against each transform. Columns are: run time, filename, model name, transform name, accuracy. Will be placed in the current working directory.
+* `avg_results.csv`: CSV file containing average results for each model against each transform. Columns are model name, transform name, accuracy, run time. Will be placed
+  in the current working directory.
+* `results/`: Directory containing output foreground masks for test, as well as graphs displaying average results. Will be placed in a folder up from the current working directory by default, but this can be changed with `--save-dir`.
 
 ## Modules
 
