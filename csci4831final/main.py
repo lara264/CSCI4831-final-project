@@ -400,8 +400,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--compute-mask", dest="compute_mask",
-        help="If given, will compute true mask for given image. If 'ALL' is"
-             "given, then will compute mask for all images as they are loaded"
+        help="If given, will compute true mask for given image."
     )
     parser.add_argument(
         "--mask-dir", dest="mask_dir", default="../People_Masks",
