@@ -6,13 +6,13 @@ import logging
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from .. import csci4831final as csf
-
 
 logging.basicConfig(
     level=logging.INFO,
     format="(%(levelname)s): %(asctime)s --- %(message)s",
 )
+
+import csci4831final as csf
 
 
 def demo(image: str, background: str, result_dir: str) -> None:
@@ -91,6 +91,8 @@ def demo(image: str, background: str, result_dir: str) -> None:
     cols = 2
     i = 1
     for prediction in os.listdir(result_dir):
+        if prediction.startswith("."):
+            continue
         logging.info(f"Loading {prediction}...")
         filename, model_name, trans_name, acc, run_time = prediction.split("_")
         pred_data = np.float32(cv2.imread(
