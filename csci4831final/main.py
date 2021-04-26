@@ -10,8 +10,9 @@ import time
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-import get_points
-import clusters
+from csci4831final import get_points
+from csci4831final import clusters
+
 
 
 logging.basicConfig(
@@ -152,10 +153,11 @@ def do_test(test: Test, data: List[PeopleImage], save_dir: str) -> None:
 
         to_predict = test.transform(image.data)
         prediction = test.model(to_predict)
+        true = test.transform(image.mask_data)
 
         end = time.perf_counter()
 
-        acc = clusters.get_accuracy(prediction, to_predict)
+        acc = clusters.get_accuracy(prediction, true)
         
         accuracies.append(acc)
         run_time = end - start

@@ -38,7 +38,39 @@ def fill_holes(image_data: np.ndarray, original: np.ndarray) -> np.ndarray:
                 if np.all(result[i][j] == 0):
                     result[i][j] = [1, 1, 1]
 
-    cv2.imwrite("test.png", result)
+    return result
+
+
+def replace_background(
+    fg_data: np.ndarray,
+    bg_data: np.ndarray
+)-> np.ndarray:
+    """
+    Perform virtual background replacement on given image.
+
+    Parameters
+    ----------
+    fg_data: numpy array
+        Image to add virtual background to
+
+    bg_data: numpy array
+        Virtual background image
+
+    Returns
+    -------
+    numpy array
+        Resulting image
+    """
+
+    background = cv2.resize(bg_data, (fg_data.shape[1], fg_data.shape[0]))
+    result = np.zeros(fg_data.shape)
+    for i in range(fg_data.shape[0]):
+        for j in range(fg_data.shape[1]):
+            if list(fg_data[i][j]) == [0, 0, 0]:
+                result[i][j] = background[i][j]
+            else:
+                result[i][j] = fg_data[i][j]
+
     return result
 
 
@@ -77,14 +109,7 @@ def main(fg: str, bg: str, out: str, original: str) -> None:
         org_data = cv2.imread(original)
         fg_data = fill_holes(fg_data, org_data)
 
-    background = cv2.resize(bg_data, (fg_data.shape[1], fg_data.shape[0]))
-    result = np.zeros(fg_data.shape)
-    for i in range(fg_data.shape[0]):
-        for j in range(fg_data.shape[1]):
-            if list(fg_data[i][j]) == [0, 0, 0]:
-                result[i][j] = background[i][j]
-            else:
-                result[i][j] = fg_data[i][j]
+    result = replace_background(fg_data, bg_data)
 
     cv2.imwrite(out, result)
 

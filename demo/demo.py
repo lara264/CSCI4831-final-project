@@ -1,20 +1,18 @@
 #!/usr/env/python3
 # -*- coding: utf-8 -*-
 """Demo csci4831final code."""
-import sys
 import os
 import logging
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from .. import csci4831final as csf
+
 
 logging.basicConfig(
     level=logging.INFO,
     format="(%(levelname)s): %(asctime)s --- %(message)s",
 )
-
-sys.path.append(os.path.abspath("../"))
-import csci4831final as csf
 
 
 def demo(image: str, background: str, result_dir: str) -> None:
