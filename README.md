@@ -29,6 +29,23 @@ $ poetry shell
 (csci4831final) $ <command>
 ```
 
+## Demo
+
+To run the presentation demo:
+
+```bash
+$ poetry shell
+(csci4831final) $ cd demo
+(csci4831final) $ python demo.py
+```
+
+The following steps occur during the demo:
+
+1. First the virtual background and person image are displayed. Press any key to continue.
+2. The get_points module is used to create a mask for the person image. Select the top-left of the person, then the bottom-right, hit any key, then select the top-left of the person's face, then the bottom-right, then hit any key.
+3. The foreground mask is computed and displayed. Press any key.
+4. Tests are run against mini-batch KMeans with results outputted to the terminal. After these have run, graphs are displayed showing results. Exit the window to stop the program.
+
 ## Running
 
 Project is implemented as a script which can be run from the shell:
